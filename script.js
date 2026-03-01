@@ -4,7 +4,7 @@ $(document).ready(function() {
     const VOICE_VOLUME = 0.8;
     const BG_VOLUME = 0.1;
 
-    // Определяем, мобильное устройство или нет
+    // Определяем мобильное устройство
     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     console.log("Мобильное устройство:", isMobile ? "Да" : "Нет");
 
@@ -36,7 +36,6 @@ $(document).ready(function() {
     let bgMusic = document.getElementById('bg-music');
     if (bgMusic) bgMusic.volume = BG_VOLUME;
 
-    // Флаг, был ли уже первый клик/взаимодействие
     let userInteracted = false;
 
     function stopVoice() {
@@ -57,7 +56,6 @@ $(document).ready(function() {
 
         let voiceElement = $("#flipbook .page").eq(index).find(".page-audio")[0];
         if (voiceElement) {
-            // Если на мобильном и ещё не было взаимодействия, не пытаемся играть
             if (isMobile && !userInteracted) {
                 console.log("📱 Мобильное устройство: ждём первого касания");
                 return;
@@ -66,30 +64,29 @@ $(document).ready(function() {
             stopVoice();
             voiceElement.volume = VOICE_VOLUME;
             
-            // Небольшая задержка для мобильных, чтобы анимация не мешала
-            let delay = isMobile ? 100 : 0;
-            setTimeout(() => {
-                voiceElement.play()
+            // На мобильных добавляем задержку для завершения анимации
+            let playPromise = voiceElement.play();
+            if (playPromise !== undefined) {
+                playPromise
                     .then(() => {
                         currentVoice = voiceElement;
                         console.log(`✅ Голос для страницы ${pageNumber} запущен (индекс ${index})`);
                     })
                     .catch(error => {
                         console.error(`❌ Ошибка воспроизведения голоса для страницы ${pageNumber}:`, error);
-                        // Если ошибка из-за отсутствия взаимодействия, запоминаем
                         if (error.name === "NotAllowedError") {
                             userInteracted = false;
                         }
                     });
-            }, delay);
+            }
         } else {
             console.log(`ℹ️ На странице ${pageNumber} (индекс ${index}) нет аудио`);
         }
     }
 
     function playBgMusic() {
-        if (!userInteracted) return;
-        if (bgMusic && bgMusic.paused) {
+        if (!bgMusic) return;
+        if (bgMusic.paused) {
             bgMusic.play().catch(e => console.log("Фон не запустился:", e));
         }
     }
@@ -102,36 +99,34 @@ $(document).ready(function() {
         
         playBgMusic();
         let currentPage = $("#flipbook").turn("page");
-        
-        // Небольшая задержка для мобильных
-        setTimeout(() => {
-            playVoiceForPage(currentPage);
-        }, isMobile ? 200 : 0);
+        playVoiceForPage(currentPage);
     }
 
-    // События для отслеживания первого взаимодействия
+    // Обработчики первого взаимодействия
     $(".notebook").on("click touchstart", function(e) {
         handleFirstInteraction();
     });
 
     $("#playSound").on("click touchstart", function() {
         handleFirstInteraction();
-        // Кнопка дополнительно запускает голос для текущей страницы
         let currentPage = $("#flipbook").turn("page");
-        setTimeout(() => {
-            playVoiceForPage(currentPage);
-        }, isMobile ? 100 : 0);
+        playVoiceForPage(currentPage);
     });
 
-    // При перелистывании
+    // При перелистывании страницы
     $("#flipbook").on("turned", function(event, pageNumber, view) {
         console.log(`📖 Событие turned, pageNumber = ${pageNumber}`);
         
-        // На мобильных добавляем небольшую задержку после перелистывания
+        if (!userInteracted) {
+            console.log("⚠️ Пользователь ещё не взаимодействовал, голос не включаем");
+            return;
+        }
+
+        // На мобильных добавляем задержку, чтобы анимация завершилась
         if (isMobile) {
             setTimeout(() => {
                 playVoiceForPage(pageNumber);
-            }, 150);
+            }, 300); // увеличил задержку до 300 мс
         } else {
             playVoiceForPage(pageNumber);
         }
@@ -146,10 +141,9 @@ $(document).ready(function() {
         return true;
     });
 
-    // Для мобильных: обрабатываем касание по странице
+    // Отдельно для мобильных: отслеживаем касание по страницам
     if (isMobile) {
         $("#flipbook").on("touchstart", ".page", function(e) {
-            // Не блокируем событие, просто отмечаем взаимодействие
             handleFirstInteraction();
         });
     }
