@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Моё послание</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="notebook">
+<div id="flipbook">
+    <!-- Обложка -->
+    <div class="page cover">
+        <div class="page-content cover-content">
+            <h1>Мое послание для Таисии</h1>
+        </div>
+    </div>
+    <!-- Страница 1 -->
+    <div class="page">
+        <div class="page-content">
+            <h2>Страница 1</h2>
+            <p>Если однажды ты больше не услышишь обо мне, пожалуйста помни об этом</p>
+            <p>Я любил тебя всем что у меня было, я сделал тебя своим приоритетом, хотя никогда не думал что такое возможно</p>
+            <audio class="page-audio" src="audio/str1.mp3" preload="auto"></audio>
+        </div>
+    </div>
+    <!-- Страница 2 -->
+    <div class="page">
+        <div class="page-content">
+            <h2>Страница 2</h2>
+            <p>Из всех путей которые я мог выбрать, я мог выбрать многих людей, но из всех вариантов, я все ровно выбрал тебя</p>
+            <p>Потому что хотел оставить свой выбор с тобой</p>
+            <p>Я остался, но когда я уйду я надеюсь что мое отсутствие принесет тебе покой которого никогда не приносило мое присутствие</p>
+            <audio class="page-audio" src="audio/str2.mp3" preload="auto"></audio>
+        </div>
+    </div>
+    <!-- Страница 3 -->
+    <div class="page">
+        <div class="page-content">
+            <h2>Страница 3</h2>
+            <p>Моя любовь к тебе никогда не была идеальной, но она была и будет настоящей</p>
+            <p>И даже сейчас, когда я отпускаю тебя, часть меня всегда будет надеяться, что ты обретешь счастье, которого я не смог тебе дать</p>
+            <audio class="page-audio" src="audio/str3.mp3" preload="auto"></audio>
+        </div>
+    </div>
+    <!-- Страница 4 -->
+    <div class="page">
+        <div class="page-content">
+            <h2>Страница 4</h2>
+            <p>Если ты когда-нибудь вспомнишь обо мне, я надеюсь ты вспомнишь тепло, смех тихие моменты когда слова были не нужны, я надеюсь ты знаешь что даже в тишине</p>
+            <p>я люблю тебя так, как не всегда умел выразить, и если мир когда-нибудь покажется тебе тяжелым, я надеюсь ты найдешь того кто будет хранить твое сердце так, как я когда-то пытался всем что у меня было</p>
+            <audio class="page-audio" src="audio/str4.mp3" preload="auto"></audio>
+        </div>
+    </div>
+    <!-- Страница 5 -->
+    <div class="page">
+        <div class="page-content">
+            <h2>Страница 5</h2>
+            <p>Надеюсь то что все милые сайтики посвященные тебе, когда-то ты откроешь и вновь пересмотришь</p>
+            <p>Хочу верить в судьбу и то что когда-то мы все таки встретимся раз и навсегда.</p>
+            <audio class="page-audio" src="audio/str5.mp3" preload="auto"></audio>
+        </div>
+    </div>
+</div>
+    </div>
+
+    <button id="playSound">Включить мелодию</button>
+
+    <!-- Фоновая музыка (скрыта) -->
+    <audio id="bg-music" src="audio/mus8.mp3" loop preload="auto" style="display: none;"></audio>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="js/turn.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
