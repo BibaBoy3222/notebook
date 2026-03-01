@@ -1,8 +1,12 @@
 $(document).ready(function() {
     console.log("=== СКРИПТ ЗАПУЩЕН ===");
 
-    const VOICE_VOLUME = 0.8;   // громкость голоса
-    const BG_VOLUME = 0.1;      // громкость фона
+    const VOICE_VOLUME = 0.8;
+    const BG_VOLUME = 0.1;
+
+    // Определяем, мобильное устройство или нет
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    console.log("Мобильное устройство:", isMobile ? "Да" : "Нет");
 
     // ===== НАСТРОЙ СООТВЕТСТВИЕ ЗДЕСЬ =====
     // pageNumber (от turn.js) → индекс элемента .page в DOM
@@ -32,6 +36,9 @@ $(document).ready(function() {
     let bgMusic = document.getElementById('bg-music');
     if (bgMusic) bgMusic.volume = BG_VOLUME;
 
+    // Флаг, был ли уже первый клик/взаимодействие
+    let userInteracted = false;
+
     function stopVoice() {
         if (currentVoice) {
             currentVoice.pause();
@@ -41,8 +48,7 @@ $(document).ready(function() {
 
     function playVoiceForPage(pageNumber) {
         console.log(`▶️ Попытка включить голос для страницы ${pageNumber}`);
-        stopVoice();
-
+        
         let index = pageToIndex[pageNumber];
         if (index === undefined) {
             console.warn(`⚠️ Для страницы ${pageNumber} не задан индекс, пропускаем`);
@@ -51,31 +57,87 @@ $(document).ready(function() {
 
         let voiceElement = $("#flipbook .page").eq(index).find(".page-audio")[0];
         if (voiceElement) {
+            // Если на мобильном и ещё не было взаимодействия, не пытаемся играть
+            if (isMobile && !userInteracted) {
+                console.log("📱 Мобильное устройство: ждём первого касания");
+                return;
+            }
+
+            stopVoice();
             voiceElement.volume = VOICE_VOLUME;
-            voiceElement.play()
-                .then(() => {
-                    currentVoice = voiceElement;
-                    console.log(`✅ Голос для страницы ${pageNumber} запущен (индекс ${index})`);
-                })
-                .catch(error => {
-                    console.error(`❌ Ошибка воспроизведения голоса для страницы ${pageNumber}:`, error);
-                });
+            
+            // Небольшая задержка для мобильных, чтобы анимация не мешала
+            let delay = isMobile ? 100 : 0;
+            setTimeout(() => {
+                voiceElement.play()
+                    .then(() => {
+                        currentVoice = voiceElement;
+                        console.log(`✅ Голос для страницы ${pageNumber} запущен (индекс ${index})`);
+                    })
+                    .catch(error => {
+                        console.error(`❌ Ошибка воспроизведения голоса для страницы ${pageNumber}:`, error);
+                        // Если ошибка из-за отсутствия взаимодействия, запоминаем
+                        if (error.name === "NotAllowedError") {
+                            userInteracted = false;
+                        }
+                    });
+            }, delay);
         } else {
             console.log(`ℹ️ На странице ${pageNumber} (индекс ${index}) нет аудио`);
         }
     }
 
     function playBgMusic() {
+        if (!userInteracted) return;
         if (bgMusic && bgMusic.paused) {
             bgMusic.play().catch(e => console.log("Фон не запустился:", e));
         }
     }
 
-    $("#flipbook").on("turned", function(event, pageNumber, view) {
-        console.log(`📖 Событие turned, pageNumber = ${pageNumber}`);
-        playVoiceForPage(pageNumber);
+    // Функция для обработки первого взаимодействия
+    function handleFirstInteraction() {
+        if (userInteracted) return;
+        userInteracted = true;
+        console.log("👆 Первое взаимодействие с книгой");
+        
+        playBgMusic();
+        let currentPage = $("#flipbook").turn("page");
+        
+        // Небольшая задержка для мобильных
+        setTimeout(() => {
+            playVoiceForPage(currentPage);
+        }, isMobile ? 200 : 0);
+    }
+
+    // События для отслеживания первого взаимодействия
+    $(".notebook").on("click touchstart", function(e) {
+        handleFirstInteraction();
     });
 
+    $("#playSound").on("click touchstart", function() {
+        handleFirstInteraction();
+        // Кнопка дополнительно запускает голос для текущей страницы
+        let currentPage = $("#flipbook").turn("page");
+        setTimeout(() => {
+            playVoiceForPage(currentPage);
+        }, isMobile ? 100 : 0);
+    });
+
+    // При перелистывании
+    $("#flipbook").on("turned", function(event, pageNumber, view) {
+        console.log(`📖 Событие turned, pageNumber = ${pageNumber}`);
+        
+        // На мобильных добавляем небольшую задержку после перелистывания
+        if (isMobile) {
+            setTimeout(() => {
+                playVoiceForPage(pageNumber);
+            }, 150);
+        } else {
+            playVoiceForPage(pageNumber);
+        }
+    });
+
+    // Разрешаем только нижние углы
     $("#flipbook").on("start", function(event, pageObject, corner, page) {
         if (corner === "tl" || corner === "tr") {
             console.log("⛔ Запрещён верхний угол");
@@ -84,21 +146,15 @@ $(document).ready(function() {
         return true;
     });
 
-    $(".notebook").one("click", function() {
-        console.log("📘 Первый клик по книге");
-        playBgMusic();
-        let currentPage = $("#flipbook").turn("page");
-        playVoiceForPage(currentPage);
-    });
+    // Для мобильных: обрабатываем касание по странице
+    if (isMobile) {
+        $("#flipbook").on("touchstart", ".page", function(e) {
+            // Не блокируем событие, просто отмечаем взаимодействие
+            handleFirstInteraction();
+        });
+    }
 
-    $("#playSound").click(function() {
-        console.log("🔘 Нажата кнопка");
-        playBgMusic();
-        let currentPage = $("#flipbook").turn("page");
-        playVoiceForPage(currentPage);
-    });
-
-    // ===== ОТЛАДКА – ВЫВОДИТ ТЕКУЩУЮ СТРУКТУРУ =====
+    // ===== ОТЛАДКА =====
     console.log("=== ТЕКУЩАЯ СТРУКТУРА СТРАНИЦ ===");
     $("#flipbook .page").each(function(index) {
         let title = $(this).find("h2").text() || "обложка";
